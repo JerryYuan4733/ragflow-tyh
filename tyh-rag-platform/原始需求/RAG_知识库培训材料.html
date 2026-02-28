@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG 知识库运营培训材料</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --bg-light: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --gradient-2: linear-gradient(135deg, #6366f1 0%, #10b981 100%);
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.8;
+        }
+
+        .page-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            padding: 20px 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 20px 25px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .sidebar-header h2 {
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .sidebar-header p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+            margin: 8px 0 0;
+        }
+
+        .nav-section {
+            padding: 10px 0;
+        }
+
+        .nav-section-title {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 10px 25px 8px;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 12px 25px;
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border-left-color: var(--primary-light);
+        }
+
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.2);
+            color: #fff;
+            border-left-color: var(--primary);
+            font-weight: 500;
+        }
+
+        .nav-item .nav-number {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            margin-right: 10px;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 60px 0;
+            background: var(--gradient-1);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #fff;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .date {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        .section:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section h2::before {
+            content: '';
+            width: 5px;
+            height: 30px;
+            background: var(--gradient-2);
+            border-radius: 3px;
+        }
+
+        .section h3 {
+            font-size: 1.3rem;
+            margin: 25px 0 15px;
+            color: var(--text-primary);
+        }
+
+        .section h4 {
+            font-size: 1.1rem;
+            margin: 20px 0 10px;
+            color: var(--text-primary);
+        }
+
+        .section p {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .section li {
+            padding: 8px 0 8px 25px;
+            position: relative;
+            color: var(--text-secondary);
+        }
+
+        .section li::before {
+            content: '✦';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .feature-card {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            background: #e0f2fe;
+            border-color: var(--primary);
+        }
+
+        .feature-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h4 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .steps {
+            margin-top: 25px;
+        }
+
+        .step {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .step-number {
+            flex-shrink: 0;
+            width: 45px;
+            height: 45px;
+            background: var(--gradient-2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .step-content h4 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .step-content p {
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .example-box {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .example-box .label {
+            display: inline-block;
+            background: var(--accent-green);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+
+        .warning-box {
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .warning-box .label {
+            display: inline-block;
+            background: var(--accent-yellow);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+
+        .info-box {
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .info-box .label {
+            display: inline-block;
+            background: var(--primary);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: #f0f9ff;
+            color: var(--primary-dark);
+            font-weight: 500;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .img-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .img-container img {
+            max-width: 80%;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .img-caption {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .img-row {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .img-row img {
+            max-width: 48%;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            left: 20px;
+            top: 20px;
+            z-index: 1001;
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .sidebar-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .section {
+                padding: 25px;
+            }
+
+            .step {
+                flex-direction: column;
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+    <div class="page-wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>📚 RAG 知识库</h2>
+                <p>运营培训导航</p>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">基础介绍</div>
+                <a class="nav-item active" href="#section-rag"><span class="nav-number">01</span>什么是RAG</a>
+                <a class="nav-item" href="#section-ragflow"><span class="nav-number">02</span>RAGFlow介绍</a>
+                <a class="nav-item" href="#section-trend"><span class="nav-number">03</span>发展趋势</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">操作流程</div>
+                <a class="nav-item" href="#section-interface"><span class="nav-number">04</span>界面总览</a>
+                <a class="nav-item" href="#section-upload"><span class="nav-number">05</span>上传与解析</a>
+                <a class="nav-item" href="#section-test"><span class="nav-number">06</span>对话测试</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">文档类型示例</div>
+                <a class="nav-item" href="#section-excel"><span class="nav-number">07</span>Excel文档</a>
+                <a class="nav-item" href="#section-word"><span class="nav-number">08</span>Word文档</a>
+                <a class="nav-item" href="#section-pdf"><span class="nav-number">09</span>PDF文档</a>
+                <a class="nav-item" href="#section-ppt"><span class="nav-number">10</span>PPT演示</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-title">规范与验收</div>
+                <a class="nav-item" href="#section-spec"><span class="nav-number">11</span>文档规范</a>
+                <a class="nav-item" href="#section-score"><span class="nav-number">12</span>评分标准</a>
+                <a class="nav-item" href="#section-faq"><span class="nav-number">13</span>常见问题FAQ</a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="container">
+                <div class="header">
+                    <h1>📚 RAG 知识库运营培训</h1>
+                    <p class="subtitle">RAGFlow 知识库管理培训材料</p>
+                    <p class="date">培训日期：2026年2月</p>
+                </div>
+
+                <!-- 什么是RAG -->
+                <div class="section" id="section-rag">
+                    <h2>什么是RAG？</h2>
+                    <h3>🤔 通用大模型的"尴尬时刻"</h3>
+                    <p>使用 ChatGPT 或文心一言这类通用大模型时，常遇到两种问题：</p>
+                    <ul>
+                        <li><strong>"一本正经地胡说八道"（幻觉）：</strong>问专业问题时，编造看起来很真但完全错误的答案</li>
+                        <li><strong>对公司一无所知：</strong>问"公司最新产品定价"，它回答不了，因为那是内部机密</li>
+                    </ul>
+                    <p>这就像一个博览群书的<strong>学霸</strong>，上知天文下知地理，但问它你们部门上周的会议纪要，它肯定一脸懵。</p>
+                    <div class="img-container">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/56ed8d5e-e6dd-444f-9eb5-534736ddfeee.png"
+                            alt="大模型的局限性">
+                        <p class="img-caption">通用大模型的局限性：对企业私有知识一无所知</p>
+                    </div>
+
+                    <h3>💡 救星来了：RAG = "开卷考试"</h3>
+                    <p><strong>RAG</strong>（Retrieval-Augmented Generation，检索增强生成）原理超级简单：</p>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="icon">📕</div>
+                            <h4>闭卷考试（以前）</h4>
+                            <p>大模型全靠脑子里的记忆回答，记错了就瞎编，没记过就不会</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="icon">📖</div>
+                            <h4>开卷考试（RAG）</h4>
+                            <p>给大模型发"参考书"（公司文档），提问时先翻书找相关内容再回答</p>
+                        </div>
+                    </div>
+                    <div class="img-container">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/b8f3ca1f-356a-4200-af07-c58647c705c6.png"
+                            alt="RAG开卷考试">
+                        <p class="img-caption">RAG = 开卷考试：带着参考书回答问题</p>
+                    </div>
+                    <div class="info-box">
+                        <span class="label">📌 核心价值</span>
+                        <p style="color: var(--text-primary); margin:0;"><strong>RAG = 企业私有知识 + 大模型智能 =
+                                专属的企业AI助手</strong><br>回答既准确（因为有依据），又通顺（因为大模型文笔好）</p>
+                    </div>
+                </div>
+
+                <!-- RAGFlow介绍 -->
+                <div class="section" id="section-ragflow">
+                    <h2>RAGFlow是什么？</h2>
+                    <p>如果说 RAG 是"开卷考试"这个<strong>想法</strong>，那么 <strong>RAGFlow</strong>
+                        就是实现这个想法的<strong>全自动流水线机器</strong>。</p>
+                    <p>运营人员手里有大量的 PDF、Word、Excel、网页链接，这些都是乱糟糟的"原材料"。大模型是看不懂这些原始文件的。RAGFlow
+                        的作用，就是把这些"原材料"，加工成大模型能随时查阅的"参考书"。</p>
+
+                    <h3>🏭 RAGFlow 的幕后工作流程</h3>
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>知识"喂养"与"切块"</h4>
+                                <p>把公司文档扔给RAGFlow，大模型一口气读不懂几百页的书，机器会把长文档<strong>切碎</strong>成一个个小的知识点</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>制作"智能索引"（最核心）</h4>
+                                <p>利用向量化技术，给每个知识小方块打上"意义标签"，像图书馆分类一样整齐放进向量数据库</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>检索与生成</h4>
+                                <p>用户提问时，RAGFlow迅速找出最匹配的知识块，打包发送给大模型，生成准确回答</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="img-container">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/be9b4676-2256-407a-b53e-d5d2d1ee2d75.png"
+                            alt="RAGFlow工作流程">
+                        <p class="img-caption">RAGFlow 的知识加工流程：切块 → 索引 → 检索 → 生成</p>
+                    </div>
+                </div>
+
+                <!-- 发展趋势 -->
+                <div class="section" id="section-trend">
+                    <h2>行业发展趋势</h2>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="icon">🚀</div>
+                            <h4>市场规模快速增长</h4>
+                            <p>企业知识管理市场预计2026年达到300亿美元，RAG技术成为主流方案</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="icon">🎯</div>
+                            <h4>降低技术门槛</h4>
+                            <p>自然语言交互让非技术人员也能进行知识查询，提升全员信息获取能力</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="icon">⚡</div>
+                            <h4>效率大幅提升</h4>
+                            <p>从传统的翻阅文档到即问即答，信息获取时间从数小时缩短至数秒</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="icon">🔮</div>
+                            <h4>智能化自动化</h4>
+                            <p>AI自动理解意图、检索知识、组织语言，实现端到端智能问答</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 界面总览 -->
+                <div class="section" id="section-interface">
+                    <h2>主界面总览</h2>
+                    <p>RAGFlow是"智能客服工厂"，界面是"总控台"。主要做两件事：<strong>"进货"</strong>（上传知识文档）和<strong>"验货"</strong>（测试问答效果）</p>
+                    <div class="img-container">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/c7c76a5b-7f59-48b9-9a86-53b96531614f.png"
+                            alt="RAGFlow主界面">
+                        <p class="img-caption">RAGFlow 主界面总览</p>
+                    </div>
+
+                    <h3>🔝 顶部导航栏</h3>
+                    <ul>
+                        <li><strong>🏠 首页：</strong>回到总览界面</li>
+                        <li><strong>知识库（核心）：</strong>相当于"仓库"，所有文档在这里创建分类并上传</li>
+                        <li><strong>聊天（核心）：</strong>相当于"体验店"，传好文档后去和AI对话测试</li>
+                        <li><strong>文件管理：</strong>查看上传过的所有原始文件列表</li>
+                    </ul>
+
+                    <h3>📦 知识库板块 — "原材料仓库"</h3>
+                    <p>每个卡片代表一个独立的知识主题，如"终端销售"、"公司政策"等。卡片显示文件数量和最后更新时间。</p>
+
+                    <h3>💬 聊天板块 — "产品体验区"</h3>
+                    <p>每个卡片是配置好的"机器人客服"。每次更新文档后，<strong>一定要</strong>来这里测试AI回答是否符合预期。</p>
+                    <div class="img-container">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/8e6f3b2d-034f-4bd3-a8b9-10da048a2dce.png"
+                            alt="顶部导航栏">
+                        <p class="img-caption">顶部导航栏：知识库和聊天是最常用的功能入口</p>
+                    </div>
+                </div>
+
+                <!-- 上传与解析 -->
+                <div class="section" id="section-upload">
+                    <h2>上传与解析</h2>
+                    <h3>📤 文件上传步骤</h3>
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>点击 ➕ 新增文件</h4>
+                                <p>选择本地文件（Word, Excel, PDF, PPT等）确认上传</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>选择解析模式（重点！）</h4>
+                                <p>不同文件结构完全不同，必须为每个文件指定正确的"阅读方式"</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>等待解析完成</h4>
+                                <p>🟢绿色圆点=成功，🔴红色圆点=失败（文件加密、损坏或格式太复杂）</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>质量验收</h4>
+                                <p>点击文件名查看解析结果，确认文字被整齐切成若干个"块"且内容清晰</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="warning-box">
+                        <span class="label">⚠️ 为什么解析配置很重要？</span>
+                        <p style="color: var(--text-primary);">大模型像"视力不好"的厨师。PPT是一页一页的，Excel是一行一行的，手册是一段一段的，结构完全不同。</p>
+                        <ul>
+                            <li><strong>PPT模式：</strong>告诉AI每一页是一个独立的话题</li>
+                            <li><strong>Excel模式：</strong>告诉AI第一行是表头，每一行是一条完整数据</li>
+                            <li><strong>手册模式：</strong>告诉AI留意目录和层级结构</li>
+                        </ul>
+                        <p style="color: var(--text-primary); margin:0;"><strong>"一刀切"的读取方式只会产生"知识垃圾"！</strong></p>
+                    </div>
+                    <div class="img-row">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/cacdab29-8481-415b-bebe-dbcde5549679.png"
+                            alt="错误的解析方式">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/dd5ebb67-6efe-4b9c-923c-b4af6e47459c.png"
+                            alt="正确的解析方式">
+                    </div>
+                    <p class="img-caption" style="text-align:center;">左：一刀切导致知识垃圾 | 右：正确配置让知识结构化</p>
+                </div>
+
+                <!-- 对话测试 -->
+                <div class="section" id="section-test">
+                    <h2>对话测试</h2>
+                    <p>找到对应的聊天窗口进行测试。不用关心聊天设置，这些配置技术人员会提前配置好。</p>
+                    <h3>✅ 运营人员的"验货"三部曲</h3>
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>首问</h4>
+                                <p>问一个文档里的标准问题，看AI能否直接提取到答案</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>追问</h4>
+                                <p>换一种不专业的问法（大白话），看AI能否通过"语义理解"匹配到知识</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>反查</h4>
+                                <p>点击回答下方的引用文档，确认AI没有"张冠李戴"</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="img-container">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/2b1ee968-e2bf-4cd4-94d3-eed2f4bf9724.png"
+                            alt="聊天测试界面">
+                        <p class="img-caption">聊天测试界面：查看引用来源进行反查验证</p>
+                    </div>
+                </div>
+
+                <!-- Excel文档 -->
+                <div class="section" id="section-excel">
+                    <h2>Excel文档处理</h2>
+                    <p>Excel是RAG系统中最容易产出高质量回答的格式，但要告诉AI这一行行数据代表什么。</p>
+
+                    <h3>📊 场景A：问答对照表（最推荐 ⭐⭐⭐⭐⭐）</h3>
+                    <div class="example-box">
+                        <span class="label">Q&A 问答模式</span>
+                        <p><strong>文件特征：</strong>只有两列，第一列是用户常问的问题，第二列是标准回答</p>
+                        <p><strong>解析方式：</strong>Q&A（问答）</p>
+                        <div class="steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <p>上传Excel文件到知识库</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <p>点击文件的"解析"列，选择<strong>Q&A</strong>模式</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <p>点击绿色三角开始解析，等待变成🟢绿色圆点</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>📋 支持的文档格式</h4>
+                        <p>支持 <strong>Excel (.xlsx, .xls)</strong> 和 <strong>CSV/TXT</strong> 文件格式</p>
+
+                        <h4>⚙️ 解析逻辑</h4>
+                        <p>系统会自动寻找"问题"和"答案"的对应关系。Excel默认第一列是问题，第二列是答案</p>
+
+                        <h4>�️ 配置截图</h4>
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/8cc4d220-64e8-4783-819c-5197dc5be07a.png"
+                                alt="Q&A配置截图">
+                            <p class="img-caption">Q&A 解析配置界面</p>
+                        </div>
+
+                        <h4>�📝 文档规范</h4>
+                        <ul>
+                            <li>Q&A问答对文档<strong>只能有两列</strong>：第一列是"问"，第二列是"答"</li>
+                            <li><strong>不要有标题行！</strong>一行一个问答对</li>
+                            <li><strong>不要合并单元格！</strong></li>
+                            <li>如果是CSV/TXT格式：使用UTF-8编码，用TAB分隔问题和答案</li>
+                        </ul>
+
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th>✅ 优质文档</th>
+                                    <th>❌ 劣质文档</th>
+                                </tr>
+                                <tr>
+                                    <td><strong>问题穷举：</strong>一个标准答案对应多个不同问法的"相似问"</td>
+                                    <td><strong>合并单元格：</strong>Excel中把多个问题合并到一个大单元格里</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>答案独立：</strong>答案列包含完整的上下文</td>
+                                    <td><strong>依赖上下文：</strong>答案里写"如同上述操作"，AI看不到"上述"</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/fb90b3a4-5c4e-44ce-a9d7-886435e01e45.png"
+                                alt="Q&A Excel示例">
+                            <p class="img-caption">Q&A 问答对Excel格式示例</p>
+                        </div>
+                    </div>
+
+                    <h3>📊 场景B：纯数据表（价格表、参数表）</h3>
+                    <div class="example-box">
+                        <span class="label">Table 表格模式</span>
+                        <p><strong>文件特征：</strong>第一行是表头（型号、价格、颜色），下面全是对应数据</p>
+                        <p><strong>解析方式：</strong>Table（表格）</p>
+                        <div class="steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <p>上传Excel文件到知识库</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <p>点击文件的"解析"列，选择<strong>Table</strong>模式</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <p>点击绿色三角开始解析，等待变成🟢绿色圆点</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>📋 支持的文档格式</h4>
+                        <p>支持 <strong>Excel (.xlsx, .xls)</strong> 和 <strong>CSV</strong> 文件格式</p>
+
+                        <h4>⚙️ 解析逻辑</h4>
+                        <p>每一行会被作为一个完整的数据条目。AI会记住"A型号的价格是100元"</p>
+
+                        <h4>�️ 配置截图</h4>
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/a51f63cc-5962-4dd1-a814-cdc07c2ed2c7.png"
+                                alt="Table配置截图">
+                            <p class="img-caption">Table 解析配置界面</p>
+                        </div>
+
+                        <h4>�📝 文档规范</h4>
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th>✅ 优质文档</th>
+                                    <th>❌ 劣质文档</th>
+                                </tr>
+                                <tr>
+                                    <td>标准的二维表格，第一行是表头（如：型号、价格、颜色）</td>
+                                    <td>复杂的嵌套表头、斜线表头、表头在侧面的表格</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/16210616-7f62-4702-ba39-18ebc88abccb.svg"
+                                alt="Table表格示例">
+                            <p class="img-caption">Table 表格模式示例：标准二维表格</p>
+                        </div>
+                    </div>
+
+                    <h3>📊 场景C：标签词库</h3>
+                    <div class="example-box">
+                        <span class="label">Tag 标签模式</span>
+                        <p><strong>文件特征：</strong>里面是一堆专有名词，如"所有支持的车型列表"</p>
+                        <p><strong>解析方式：</strong>Tag（标签）</p>
+                        <div class="steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <p>上传Excel文件到知识库</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <p>点击文件的"解析"列，选择<strong>Tag</strong>模式</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <p>点击绿色三角开始解析，等待变成🟢绿色圆点</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>⚠️ 特殊用途</h4>
+                        <p>这不是用来回答问题的，而是给其他文件做<strong>分类过滤</strong>用的。包含专有名词列表，如"所有支持的车型"或"所有分公司名单"。</p>
+
+                        <h4>⚙️ 配置建议</h4>
+                        <p>自动问题设置为0，自动关键词提取设置为1</p>
+
+                        <h4>🖥️ 配置截图</h4>
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/9eacd6c4-a53c-411b-b8ef-90ba2fa9ff29.png"
+                                alt="Tag配置截图">
+                            <p class="img-caption">Tag 解析配置界面（元数据设置）</p>
+                        </div>
+
+                        <h4>📊 示例图</h4>
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/a618c5f7-addd-4fa1-a8de-c376624b8ff0.svg"
+                                alt="Tag示例">
+                            <p class="img-caption">Tag 标签模式示例：用于分类过滤的词库</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Word文档 -->
+                <div class="section" id="section-word">
+                    <h2>Word文档处理</h2>
+                    <p>Word文档最灵活，要看它主要写了什么。</p>
+
+                    <h3>📝 场景A：普通文章（最常用）</h3>
+                    <div class="example-box">
+                        <span class="label">General 通用模式</span>
+                        <p><strong>文件特征：</strong>有标题，有段落，就像平时写的作文</p>
+                        <p><strong>解析方式：</strong>General（通用）</p>
+                        <div class="steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <p>上传Word文件到知识库</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <p>点击文件的"解析"列，选择<strong>General</strong>模式</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <p>点击绿色三角开始解析，等待变成🟢绿色圆点</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>📋 支持的文档格式</h4>
+                        <p>支持：<strong>MD, DOCX, XLSX, PPT, PDF, TXT, JPEG, PNG, CSV, JSON, HTML</strong> 等</p>
+                        <p style="color: var(--accent-green);">💡 建议优先使用 MD 或 DOCX 格式</p>
+
+                        <h4>⚙️ 解析逻辑</h4>
+                        <p>系统像切香肠一样，按照设定的长度（Token数）机械地把文章切成一段一段。主要保证内容都被录入</p>
+
+                        <h4>🖥️ 配置截图与参数说明</h4>
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/09ee14d9-722b-461c-a817-99bcb875be0f.png"
+                                alt="General配置截图">
+                            <p class="img-caption">General 解析配置界面</p>
+                        </div>
+                        <ul>
+                            <li><strong>Chunk (分块大小)：</strong>相当于"每一口吃多少字"。设太大AI会读太多无关信息，设太小句子会被切断。<em>建议值：512 或
+                                    1024</em></li>
+                            <li><strong>Delimiter (分隔符)：</strong>告诉系统遇到什么符号就切一刀（如句号、换行符）</li>
+                        </ul>
+
+                        <h4>📝 文档规范</h4>
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th>✅ 优质文档 (AI 喜欢)</th>
+                                    <th>❌ 劣质文档 (AI 可能会晕)</th>
+                                </tr>
+                                <tr>
+                                    <td><strong>层级分明：</strong>标题使用 Word 标准的"标题1、标题2"样式</td>
+                                    <td><strong>格式混乱：</strong>全文没有分段，或者用空格键来做缩进</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>标点规范：</strong>句子结束有明确的句号</td>
+                                    <td><strong>缺乏标点：</strong>文字堆砌，甚至用截图代替文字</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>内容连续：</strong>每一段话把一件事情讲清楚</td>
+                                    <td><strong>过度排版：</strong>为了美观把一句话拆成好几行，插入大量装饰符号</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/yBRq1ZPv1DYryOdv/img/2ba5144d-6900-4ba3-b051-6a8f0ac88af6.png"
+                                alt="Word文档示例">
+                            <p class="img-caption">Word 文档示例：有标题、有段落的常规文章</p>
+                        </div>
+                    </div>
+
+                    <h3>📝 场景B：规章制度、法律法规</h3>
+                    <div class="example-box">
+                        <span class="label">Laws 法律模式</span>
+                        <p><strong>文件特征：</strong>有严格的条款编号，如"第一章"、"1.1条"</p>
+                        <p><strong>解析方式：</strong>Laws（法律）</p>
+                        <div class="steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <p>上传Word/PDF文件到知识库</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <p>点击文件的"解析"列，选择<strong>Laws</strong>模式</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <p>点击绿色三角开始解析，等待变成🟢绿色圆点</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>⚙️ 解析特点</h4>
+                        <p>严格保留条款编号（如"第一条"、"1.1"），保证回答时引用准确</p>
+
+                        <h4>📝 文档要求</h4>
+                        <p><strong>条款编号必须标准</strong>（如"第一章"而不是"一、"混用），严禁打乱条款序号</p>
+
+                        <h4>📊 示例图</h4>
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/0ff74664-f566-4c6f-9697-a90f62457d7d.svg"
+                                alt="Laws示例">
+                            <p class="img-caption">Laws 法律模式示例：标准条款编号结构</p>
+                        </div>
+                    </div>
+
+                    <h3>📝 场景C：超短简介</h3>
+                    <div class="example-box">
+                        <span class="label">One 整体模式</span>
+                        <p><strong>文件特征：</strong>只有200字的公司介绍，不想被拆开</p>
+                        <p><strong>解析方式：</strong>One（整体）</p>
+                        <div class="steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <p>上传文件到知识库</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <p>点击文件的"解析"列，选择<strong>One</strong>模式</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <p>点击绿色三角开始解析，等待变成🟢绿色圆点</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>⚙️ 配置建议</h4>
+                        <p>适合短文，不需要生成太多关键词。自动问题设置为3，自动关键词提取设置为10</p>
+
+                        <h4>🖥️ 配置截图</h4>
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/9eacd6c4-a53c-411b-b8ef-90ba2fa9ff29.png"
+                                alt="One配置截图">
+                            <p class="img-caption">One 解析配置界面</p>
+                        </div>
+
+                        <h4>⚠️ 避坑提醒</h4>
+                        <p style="color: var(--accent-red);"><strong>千万别传几万字的书进去！</strong>否则超出AI的单次处理上限，会直接报错或被截断</p>
+                    </div>
+                </div>
+
+                <!-- PDF文档 -->
+                <div class="section" id="section-pdf">
+                    <h2>PDF文档处理</h2>
+                    <p>PDF是最难处理的，因为电脑看PDF其实是在看"画"。</p>
+
+                    <h3>📄 场景A：产品手册、操作说明书</h3>
+                    <div class="example-box">
+                        <span class="label">Manual 手册模式</span>
+                        <p><strong>文件特征：</strong>文档很长，<strong>有清晰的层级标题（目录）</strong></p>
+                        <p><strong>解析方式：</strong>Manual（手册）</p>
+                        <div class="steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <p>上传PDF手册到知识库</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <p>点击文件的"解析"列，选择<strong>Manual</strong>模式</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <p>点击绿色三角开始解析，等待变成🟢绿色圆点</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>⚙️ 解析特点</h4>
+                        <p>极度依赖标题层级来识别内容块。系统会先读目录，搞清楚哪段属于哪章</p>
+
+                        <h4>📝 文档要求</h4>
+                        <p><strong>必须有清晰的目录结构！</strong>如果PDF左侧没有导航目录，解析效果会大打折扣</p>
+
+                        <h4>🖥️ 配置截图</h4>
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/7dadd984-5ca4-412b-8839-950c95af0502.png"
+                                alt="Manual配置截图">
+                            <p class="img-caption">Manual 解析配置界面</p>
+                        </div>
+
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/567ce4a7-7d26-4f13-b2e3-e9dd6a6bd6dd.svg"
+                                alt="Manual手册模式">
+                            <p class="img-caption">Manual 手册模式：分界清晰的章节结构</p>
+                        </div>
+                    </div>
+
+                    <h3>📄 场景B：学术论文</h3>
+                    <div class="example-box">
+                        <span class="label">Paper 论文模式</span>
+                        <p><strong>文件特征：</strong>双栏排版（一页分左右两列），有摘要、参考文献</p>
+                        <p><strong>解析方式：</strong>Paper（论文）</p>
+                        <div class="steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <p>上传PDF论文到知识库</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <p>点击文件的"解析"列，选择<strong>Paper</strong>模式</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <p>点击绿色三角开始解析，等待变成🟢绿色圆点</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>⚙️ 解析特点</h4>
+                        <p>能够识别双栏排版、摘要、参考文献。系统知道怎么读分栏文字，不会把左边和右边串行读</p>
+
+                        <h4>📝 文档要求</h4>
+                        <p>必须是标准的学术论文排版（如双栏）</p>
+
+                        <h4>🖥️ 配置截图</h4>
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/7dadd984-5ca4-412b-8839-950c95af0502.png"
+                                alt="Paper配置截图">
+                            <p class="img-caption">Paper 解析配置界面</p>
+                        </div>
+
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/91eb6a51-e8c1-4633-9da6-9316e564ba77.svg"
+                                alt="Paper论文模式">
+                            <p class="img-caption">Paper 论文模式：双栏排版的学术论文</p>
+                        </div>
+                    </div>
+
+                    <div class="warning-box">
+                        <span class="label">🔴 红色警报：扫描件/图片版PDF</span>
+                        <p style="color: var(--text-primary);"><strong>判断方法：</strong>用鼠标选文字，选不中就是图片版</p>
+                        <p style="color: var(--text-primary);">
+                            <strong>处理建议：尽量别传！</strong>如果非要传，需要开启OCR功能或选Picture模式，但效果通常不如文字版好
+                        </p>
+                    </div>
+                </div>
+
+                <!-- PPT演示 -->
+                <div class="section" id="section-ppt">
+                    <h2>PPT演示文稿处理</h2>
+                    <div class="example-box">
+                        <span class="label">Presentation 演示模式</span>
+                        <p><strong>文件特征：</strong>培训课件、产品介绍PPT，一页一页的幻灯片</p>
+                        <p><strong>解析方式：</strong>Presentation（演示文稿）</p>
+                        <div class="steps">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <p>上传PPT文件到知识库</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <p>点击文件的"解析"列，选择<strong>Presentation</strong>模式</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <p>点击绿色三角开始解析，等待变成🟢绿色圆点</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>⚙️ 解析特点</h4>
+                        <p>尝试把PPT里的图表和文本对应起来。自动问题提取设置为5，关键词提取设置为2</p>
+
+                        <h4>🖥️ 配置截图</h4>
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/9eacd6c4-a53c-411b-b8ef-90ba2fa9ff29.png"
+                                alt="Presentation配置截图">
+                            <p class="img-caption">Presentation 解析配置界面</p>
+                        </div>
+
+                        <h4>⚠️ 避坑提醒</h4>
+                        <p>如果PPT里全是截图（字都在图里），AI是读不到的。请把图里的字打在<strong>备注栏</strong>里</p>
+
+                        <div class="img-container">
+                            <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/yBRq1ZPv1DYryOdv/img/9c8decdb-ba47-4680-95bb-60d9ec65f651.png"
+                                alt="PPT演示文稿">
+                            <p class="img-caption">PPT 演示文稿示例</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文档规范 -->
+                <div class="section" id="section-spec">
+                    <h2>文档规范</h2>
+                    <h3>🏆 黄金法则</h3>
+                    <div class="warning-box">
+                        <span class="label">垃圾进，垃圾出</span>
+                        <p style="color: var(--text-primary);">哪怕RAGFlow再强大，如果文档里充满错别字、乱码、逻辑不通的句子，AI绝对回答不好</p>
+                    </div>
+                    <div class="img-row">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/258f70a6-4e86-42a8-96b8-3325bc2c4fd9.png"
+                            alt="垃圾进垃圾出">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/389566ec-9dde-498a-a87e-59e99bf7b617.png"
+                            alt="Excel是永远的神">
+                    </div>
+                    <p class="img-caption" style="text-align:center;">左：垃圾进垃圾出 | 右：Excel Q&A 是最优方案</p>
+
+                    <h3>📋 推荐文件格式</h3>
+                    <ul>
+                        <li><strong>首选：</strong>.md (Markdown), .txt, .docx (Word)</li>
+                        <li><strong>次选：</strong>.pdf（必须是文字版，<strong>严禁</strong>扫描版/图片版）</li>
+                        <li><strong>避免：</strong>.pptx（除非转成大段文字），复杂Excel</li>
+                    </ul>
+
+                    <h3>✏️ 内容写作规范</h3>
+                    <h4>原则一：上下文独立</h4>
+                    <p>避免使用"它"、"上述"、"如下图所示"等指代词，因为AI切片时可能切不到上一段。</p>
+                    <div class="example-box">
+                        <span class="label">正确写法</span>
+                        <p>❌ 产品具有防水功能。<strong>它</strong>符合IP68标准...</p>
+                        <p>✅ Model-X智能手表具有防水功能。Model-X符合IP68防水标准...</p>
+                    </div>
+
+                    <h4>原则二：段落短小精悍</h4>
+                    <p>每个段落只讲<strong>一个</strong>具体知识点，建议控制在200-500字之间。</p>
+
+                    <h4>原则三：关键词显性化</h4>
+                    <p>在文档开头或结尾增加【相关关键词】模块，罗列专有名词、别名、俗称。</p>
+                </div>
+
+                <!-- 评分标准 -->
+                <div class="section" id="section-score">
+                    <h2>评分标准</h2>
+                    <p>AI最大的问题是它永远看起来很自信，哪怕是在胡说八道。必须给它安排"上岗考试"。</p>
+                    <div class="img-container">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/a5820963-e7b7-4082-862a-fee3c5061fff.png"
+                            alt="评分标准">
+                        <p class="img-caption">AI 上岗考试：评分是衡量"信赖"的关键</p>
+                    </div>
+
+                    <h3>📝 第一步：构建测试集</h3>
+                    <p>挑选10-20个核心业务问题，并<strong>亲手写下"标准答案"</strong>。这就是"黄金标准测试集"。</p>
+                    <div class="img-container">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/afd61d59-a0e3-484b-9b8e-53c9d2ad48f9.png"
+                            alt="构建测试集">
+                        <p class="img-caption">构建黄金标准测试集</p>
+                    </div>
+
+                    <h3>📊 第二步：执行评分</h3>
+                    <div class="table-container">
+                        <table>
+                            <tr>
+                                <th>维度</th>
+                                <th>说明</th>
+                                <th>合格标准</th>
+                            </tr>
+                            <tr>
+                                <td><strong>检索命中率</strong></td>
+                                <td>引用的是否是包含答案的那份文件</td>
+                                <td>60%以上</td>
+                            </tr>
+                            <tr>
+                                <td><strong>回答准确率</strong></td>
+                                <td>对比AI回答与标准答案</td>
+                                <td>80%以上</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <h4>回答准确率评分细则</h4>
+                    <ul>
+                        <li><strong>3分（完全正确）：</strong>逻辑清晰，核心数据、步骤无误</li>
+                        <li><strong>2分（部分正确）：</strong>找到核心答案，但丢了次要细节</li>
+                        <li><strong>1分（含糊）：</strong>回答了相关内容，但没直接解决问题</li>
+                        <li><strong>0分（幻觉/错误）：</strong>编造事实或答非所问</li>
+                    </ul>
+
+                    <h3>📈 第三步：计算总分</h3>
+                    <p>通过公式计算出的准确率百分比，就是AI的"信用分"。</p>
+                    <div class="img-container">
+                        <img src="https://alidocs.oss-cn-zhangjiakou.aliyuncs.com/res/ABmOoWbVVAWPVOaw/img/a0b53399-2ce1-494e-8f9b-9d861c5ca6af.png"
+                            alt="评分公式">
+                        <p class="img-caption">AI "信用分" 计算公式</p>
+                    </div>
+                    <div class="example-box">
+                        <span class="label">计算示例</span>
+                        <p><strong>准确率 = Σ实际得分 / (总题数 × 最高分3分) × 100%</strong></p>
+                        <p>例：50道题，总分150分。如果AI最终得分90分，准确率为60%，即通过验收。</p>
+                    </div>
+                </div>
+
+                <!-- FAQ -->
+                <div class="section" id="section-faq">
+                    <h2>常见问题FAQ</h2>
+
+                    <h3>📋 基础概念</h3>
+                    <h4>Q1：RAGFlow到底干什么用？我每天主要做什么？</h4>
+                    <p><strong>A：</strong>两件事：<strong>"进货"</strong>（知识库界面上传文档）和<strong>"验货"</strong>（聊天界面测试AI回答）</p>
+
+                    <h4>Q2：我能上传哪些格式的文件？</h4>
+                    <p><strong>A：</strong>支持Word、Excel、PPT、PDF、TXT、Markdown等。<strong>特别推荐</strong>整理好的Excel问答对。<strong>尽量避免</strong>扫描版PDF。
+                    </p>
+
+                    <h4>Q3：上传后文件名旁边的小圆点是什么意思？</h4>
+                    <p><strong>A：</strong>🟢绿色=成功，🔴红色=失败（文件加密、损坏或格式太复杂）</p>
+
+                    <h3>📄 文档准备</h3>
+                    <h4>Q4：为什么传了文档，AI回答还是一塌糊涂？</h4>
+                    <p><strong>A：</strong>"垃圾进，垃圾出"。检查：错别字多？排版混乱？依赖"如上所述"之类的上下文指代？</p>
+
+                    <h4>Q5：整理FAQ用什么格式最好？</h4>
+                    <p><strong>A：</strong>Excel是永远的神！第一列问题、第二列答案。严禁合并单元格，一行一个问答对。</p>
+
+                    <h3>⚙️ 解析配置</h3>
+                    <h4>Q6：解析模式怎么选？</h4>
+                    <div class="table-container">
+                        <table>
+                            <tr>
+                                <th>文件类型</th>
+                                <th>推荐模式</th>
+                            </tr>
+                            <tr>
+                                <td>Excel 问答表</td>
+                                <td><strong>Q&A</strong></td>
+                            </tr>
+                            <tr>
+                                <td>产品参数表/价格表</td>
+                                <td><strong>Table</strong></td>
+                            </tr>
+                            <tr>
+                                <td>操作手册/说明书 PDF</td>
+                                <td><strong>Manual</strong></td>
+                            </tr>
+                            <tr>
+                                <td>PPT 演示文稿</td>
+                                <td><strong>Presentation</strong></td>
+                            </tr>
+                            <tr>
+                                <td>实在不知道选什么</td>
+                                <td><strong>General（通用）</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <h4>Q7："Token（分块大小）"和"Chunk"是什么意思？</h4>
+                    <p><strong>A：</strong>想象AI吃东西：</p>
+                    <ul>
+                        <li><strong>Chunk（分块）：</strong>AI一口吃进去的内容块</li>
+                        <li><strong>Token（分块大小）：</strong>这一口有多大</li>
+                        <li><strong>设太大：</strong>AI一次读太多无关信息，容易晕</li>
+                        <li><strong>设太小：</strong>句子被切断了，意思不连贯</li>
+                    </ul>
+                    <p>建议值：通常保持默认的 <strong>512 或 1024</strong> 即可。</p>
+
+                    <h4>Q8：什么是"元数据 (Metadata)"？为什么要配置它？</h4>
+                    <p><strong>A：</strong>元数据就是给文档贴的<strong>"智能标签"</strong>（比如：适用地区: 巴西，产品型号: AX-100）。</p>
+                    <p><strong>好处：</strong>当用户问"AX-100的保修期"时，AI会先过滤掉所有不属于AX-100的文档，极大减少答非所问的情况。</p>
+
+                    <h4>Q9：如果是产品手册或操作说明书，要注意什么？</h4>
+                    <ul>
+                        <li>Word/PDF必须有清晰的<strong>目录结构</strong>（标题层级），AI极度依赖标题来识别内容块</li>
+                        <li><strong>不要把文字做在图片里！</strong>AI看不到图片内容。如果有流程图，请在图片下方用文字把流程描述一遍</li>
+                    </ul>
+
+                    <h3>✅ 测试验收</h3>
+                    <h4>Q10：怎么才算"测试通过"？有没有量化标准？</h4>
+                    <p><strong>A：</strong>建议进行"盲测"。准备10-20个真实业务问题和标准答案，对比AI的回答。</p>
+                    <p><strong>及格线：</strong>检索命中率（找对文件）和回答准确率（说对话）达到<strong>80%</strong>以上。</p>
+
+                    <h4>Q11：AI回答错了，怎么知道它看了哪份错误的文档？</h4>
+                    <p><strong>A：</strong>在聊天界面，看AI回答下方的<strong>绿色小图标</strong>（引用来源）。点击图标，系统会直接跳转到原始文档的对应段落。如果发现那段话写错了，可以针对性地修改文档或调整元数据。
+                    </p>
+                </div>
+
+                <div class="footer">
+                    <p>RAG知识库运营培训材料</p>
+                    <p>如有问题请联系：知识库运营团队</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        }
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                if (window.innerWidth <= 1024) toggleSidebar();
+                const target = document.getElementById(this.getAttribute('href').substring(1));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+        window.addEventListener('scroll', function () {
+            const sections = document.querySelectorAll('.section[id]');
+            let current = '';
+            sections.forEach(s => { if (window.scrollY >= s.offsetTop - 150) current = s.getAttribute('id'); });
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === '#' + current) item.classList.add('active');
+            });
+        });
+    </script>
+</body>
+
+</html>

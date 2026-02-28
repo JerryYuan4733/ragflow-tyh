@@ -1,0 +1,26 @@
+# tyh-rag-platform - 仅应用服务
+# 复用现有 MySQL/Redis，无需启动额外容器
+# 使用方式: docker compose -f docker-compose-app-only.yml up -d --build
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # 使用宿主机的 RAGFlow MySQL (密码: infini_rag_flow，端口 3455)
+      - DATABASE_URL=mysql+aiomysql://root:infini_rag_flow@host.docker.internal:5455/knowledge_base
+      # 使用宿主机的 RAGFlow Redis (密码: infini_rag_flow)
+      - REDIS_URL=redis://:infini_rag_flow@host.docker.internal:6379/0
+      # JWT
+      - JWT_SECRET_KEY=your-secret-key-change-in-production
+      # RAGFlow 连接配置（助手/知识库ID已迁移到数据库，由IT管理员按团队配置）
+      - RAGFLOW_BASE_URL=http://host.docker.internal:9380/api/v1
+      - RAGFLOW_API_KEY=ragflow-kvz3G-Vb9TdEJdcrVdV5kzAGLuI0YC1GCLCOGKaN1nQ
+      # Debug
+      - DEBUG=true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

@@ -1,0 +1,39 @@
+# ============================================================
+# tyh-rag-platform Backend Dependencies
+# Python >= 3.12 | Conda Env: RAGsys
+# ============================================================
+
+# ---------- Web Framework ----------
+fastapi>=0.100.0,<1.0.0
+uvicorn[standard]>=0.24.0,<1.0.0
+
+# ---------- Data Validation ----------
+pydantic>=2.0.0,<3.0.0
+pydantic-settings>=2.0.0,<3.0.0
+
+# ---------- Database (Async MySQL + ORM) ----------
+sqlalchemy[asyncio]>=2.0.0,<3.0.0
+aiomysql>=0.2.0,<1.0.0
+alembic>=1.12.0,<2.0.0
+
+# ---------- Cache ----------
+redis[hiredis]>=5.0.0,<6.0.0
+
+# ---------- Authentication (JWT + Password Hashing) ----------
+python-jose[cryptography]>=3.3.0,<4.0.0
+bcrypt>=4.0.0,<5.0.0
+
+# ---------- File Upload ----------
+python-multipart>=0.0.6,<1.0.0
+
+# ---------- HTTP Client (RAGFlow / DeepSeek API) ----------
+httpx>=0.25.0,<1.0.0
+
+# ---------- Environment Variables ----------
+python-dotenv>=1.0.0,<2.0.0
+
+# ---------- Dev & Testing ----------
+pytest>=7.4.0,<9.0.0
+pytest-asyncio>=0.21.0,<1.0.0
+mypy>=1.7.0,<2.0.0
+ruff>=0.1.0,<1.0.0

@@ -184,22 +184,44 @@ class QWenEmbed(Base):
         import dashscope
 
         batch_size = 4
+        # 网络异常最大重试次数
+        MAX_NETWORK_RETRIES = 5
         res = []
         token_count = 0
         texts = [truncate(t, 2048) for t in texts]
         for i in range(0, len(texts), batch_size):
-            retry_max = 5
-            resp = dashscope.TextEmbedding.call(model=self.model_name, input=texts[i : i + batch_size], api_key=self.key, text_type="document")
-            while (resp["output"] is None or resp["output"].get("embeddings") is None) and retry_max > 0:
-                time.sleep(10)
-                resp = dashscope.TextEmbedding.call(model=self.model_name, input=texts[i : i + batch_size], api_key=self.key, text_type="document")
-                retry_max -= 1
-            if retry_max == 0 and (resp["output"] is None or resp["output"].get("embeddings") is None):
-                if resp.get("message"):
-                    log_exception(ValueError(f"Retry_max reached, calling embedding model failed: {resp['message']}"))
-                else:
-                    log_exception(ValueError("Retry_max reached, calling embedding model failed"))
-                raise
+            resp = None
+            # 包含网络异常（SSLError/ConnectionError等）的重试逻辑
+            for attempt in range(MAX_NETWORK_RETRIES):
+                try:
+                    resp = dashscope.TextEmbedding.call(model=self.model_name, input=texts[i : i + batch_size], api_key=self.key, text_type="document")
+                    # API调用成功但返回空结果，继续重试
+                    if resp["output"] is None or resp["output"].get("embeddings") is None:
+                        logging.warning(f"DashScope embedding返回空结果，第{attempt + 1}/{MAX_NETWORK_RETRIES}次重试，等待10s...")
+                        time.sleep(10)
+                        continue
+                    # 成功获取到结果，跳出重试循环
+                    break
+                except Exception as network_err:
+                    # 捕获网络异常（SSLError、ConnectionError、Timeout等），进行重试
+                    logging.warning(
+                        f"DashScope embedding网络异常（第{attempt + 1}/{MAX_NETWORK_RETRIES}次重试）: {type(network_err).__name__}: {network_err}"
+                    )
+                    if attempt < MAX_NETWORK_RETRIES - 1:
+                        # 指数退避：5s, 10s, 20s, 40s
+                        wait_time = 5 * (2 ** attempt)
+                        logging.info(f"等待{wait_time}s后重试...")
+                        time.sleep(wait_time)
+                        resp = None
+                        continue
+                    else:
+                        logging.error(f"DashScope embedding达到最大重试次数({MAX_NETWORK_RETRIES})，放弃重试")
+                        raise
+            # 重试耗尽仍未获取有效结果
+            if resp is None or resp["output"] is None or resp["output"].get("embeddings") is None:
+                msg = resp.get("message", "unknown error") if resp else "no response"
+                log_exception(ValueError(f"Retry_max reached, calling embedding model failed: {msg}"))
+                raise ValueError(f"DashScope embedding调用失败: {msg}")
             try:
                 embds = [[] for _ in range(len(resp["output"]["embeddings"]))]
                 for e in resp["output"]["embeddings"]:

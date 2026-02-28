@@ -1,0 +1,96 @@
+# AI知识库系统 - Helm Values
+# T-058: K8S部署配置
+
+replicaCount: 2
+
+image:
+  repository: registry.internal/knowledge-base
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: registry-secret
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: kb.internal.company.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: kb-tls
+      hosts:
+        - kb.internal.company.com
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilization: 70
+
+# 环境变量 (敏感信息走Secret)
+env:
+  DATABASE_URL: ""  # 从Secret读取
+  REDIS_URL: ""     # 从Secret读取
+  RAGFLOW_BASE_URL: "http://ragflow.ragflow:9380/api/v1"
+  RAGFLOW_API_KEY: ""  # 从Secret读取
+  JWT_SECRET_KEY: ""   # 从Secret读取
+  JWT_EXPIRE_HOURS: "24"
+  CORS_ORIGINS: '["https://kb.internal.company.com"]'
+
+# 健康检查
+livenessProbe:
+  httpGet:
+    path: /api/v1/health
+    port: 8000
+  initialDelaySeconds: 15
+  periodSeconds: 20
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/v1/health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+# MySQL (外部)
+mysql:
+  enabled: false  # 使用外部MySQL (172.31.1.3:4000)
+
+# Redis
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    password: ""  # 从Secret读取
+  master:
+    persistence:
+      size: 2Gi
+
+# 持久化
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce

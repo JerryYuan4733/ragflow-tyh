@@ -1,0 +1,27 @@
+# 依赖/构建产物
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+
+# 环境配置
+.env
+backend/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+mysql_data/
+redis_data/
+
+# OS
+.DS_Store
+Thumbs.db

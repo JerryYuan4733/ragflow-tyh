@@ -1,0 +1,109 @@
+# RAGflow K8S 部署配置 (T-060)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ragflow
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ragflow
+  namespace: ragflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ragflow
+  template:
+    metadata:
+      labels:
+        app: ragflow
+    spec:
+      containers:
+        - name: ragflow
+          image: infiniflow/ragflow:latest
+          ports:
+            - containerPort: 9380
+              name: api
+            - containerPort: 80
+              name: web
+          env:
+            - name: MYSQL_HOST
+              value: "172.31.1.3"
+            - name: MYSQL_PORT
+              value: "4000"
+            - name: MYSQL_USER
+              value: "ragflow"
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ragflow-secret
+                  key: mysql-password
+            - name: REDIS_HOST
+              value: "redis-master.default"
+            - name: REDIS_PORT
+              value: "6379"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          volumeMounts:
+            - name: ragflow-data
+              mountPath: /ragflow/data
+          livenessProbe:
+            httpGet:
+              path: /api/v1/system/version
+              port: 9380
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/v1/system/version
+              port: 9380
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: ragflow-data
+          persistentVolumeClaim:
+            claimName: ragflow-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ragflow
+  namespace: ragflow
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9380
+      targetPort: 9380
+      name: api
+    - port: 80
+      targetPort: 80
+      name: web
+  selector:
+    app: ragflow
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ragflow-data-pvc
+  namespace: ragflow
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ragflow-secret
+  namespace: ragflow
+type: Opaque
+stringData:
+  mysql-password: "CHANGE_ME"
